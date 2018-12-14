@@ -3,7 +3,7 @@
 fitcols <- c("default",
              "loan_7day_amount_woe",
              "normal_overdue_woe",
-             "score_woe",
+             #"score_woe",
              "each_other_count_2m_rate_woe",
              "dateDelta_first_apply_to_first_loan_woe",
              "call_time_15srate_woe",
@@ -79,7 +79,7 @@ train_ks <- round(max(ks),3)
 ######################################基于训练集进行评分卡制作#################################
 #针对单个变量的分箱情况计算该变量各区间评分
 
-
+# 获取变量的评分区间
 get_test_score <- function(df, coe, variableName){
   #df <- step2_3
   iv_info <- as.data.frame(iv.mult(df,"default",vars=c(variableName)))
@@ -107,6 +107,34 @@ get_test_score <- function(df, coe, variableName){
   return(score_info)
 }
 
+# 获取变量的 WOE 区间
+get_test_WOE <- function(df, coe, variableName){
+  #df <- step2_3
+  iv_info <- as.data.frame(iv.mult(df,"default",vars=c(variableName)))
+  WOE_class <- as.character(iv_info$class)
+  WOE_value <- iv_info$woe
+  WOE_info <- cbind(WOE_class, WOE_value)
+  WOE_info <- as.data.frame(WOE_info)
+  WOE_info$WOE_value <- sapply(as.numeric(as.character(WOE_info$WOE_value)), function(x) round(x))
+  WOE_info$label_0 <- iv_info$outcome_0
+  WOE_info$label_1 <- iv_info$outcome_1
+  WOE_info$total <- WOE_info$label_0 + WOE_info$label_1
+  low <- c()
+  high <- c()
+  for (i in WOE_class) {
+    s_interval = strsplit(i,";")
+    #print(parse_number(s_interval[[1]][1]))
+    low <- append(low, parse_number(s_interval[[1]][1]))
+    high <- append(high, parse_number(s_interval[[1]][2]))
+  }
+  WOE_info$low <- low
+  WOE_info$high <- high
+  WOE_info[1,"low"] <- -Inf
+  WOE_info[dim(WOE_info)[1],"high"] <- Inf
+  #print(c1)
+  return(WOE_info)
+}
+
 
 for (i in score_class) {
   s_interval = strsplit(i,";")
@@ -131,6 +159,8 @@ get_feature_score <- function(x, feature){
   return(as.numeric(as.character(feature_score)))
 }
 
+
+
 #将所有变量的评分表合一
 score_table <- list()
 for(v in fitcols_variable[2:length(fitcols_variable)]){
@@ -139,6 +169,14 @@ for(v in fitcols_variable[2:length(fitcols_variable)]){
   score_table[v] <- list(s_table)
 }
 
+
+#将所有变量的WOE表合一
+woe_table <- list()
+for(v in fitcols_variable[2:length(fitcols_variable)]){
+  w_table <- get_test_WOE(step2_3, coe, v)
+  print(w_table)
+  woe_table[v] <- list(w_table)
+}
 
 test_fitcols <- test[fitcols_variable]
 
@@ -267,13 +305,13 @@ library(openxlsx)
 wb = loadWorkbook("score_card_template_with16Features.xlsx")
 template_sheet = "score_card"
 
-for (score in names(score_table)){
+for (woe in names(woe_table)){
   #print(score)
-  score_index = which(names(score_table) == score)
-  temp = score_table[score][[1]][1:5]
-  title = c(score)
-  row_index = (as.integer((score_index+1)/2)) *7 -6
-  col_index = (score_index+1) %% 2 *8+1
+  woe_index = which(names(woe_table) == WOE_value)
+  temp = woe_table[WOE_value][[1]][1:5]
+  title = c(WOE)
+  row_index = (as.integer((woe_index+1)/2)) *7 -6
+  col_index = (woe_index+1) %% 2 *8+1
   
   writeData(wb,template_sheet,temp,startRow=row_index + 0,startCol=col_index,colName=TRUE)
   writeData(wb,template_sheet,title,startRow=row_index,startCol=col_index,colName=FALSE)
@@ -294,3 +332,4 @@ saveWorkbook(wb,score_card_name,overwrite=TRUE)
 
 ##############################modling end##########################################
 
+导入相关包

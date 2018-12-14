@@ -45,14 +45,3 @@ scoreCalculator <- function(df, coe, variableName, i){
 }
 
 
-# badratePlot <- function(df, feature, Y = "default"){
-#   tmp_df  <- group_by(df, feature)
-#   tmp_df <- tmp_df[,c(feature, Y)]
-#   tmp_df <- ddply(tmp_df, ~feature, summarise ,mean = mean(default))
-#   tmp_df <- tmp_df[order(tmp_df$mean),]
-#   row.names(tmp_df) <- 1:nrow(tmp_df)
-#   tmp_df
-#   
-#   
-#   ggplot(tmp_df, aes(x=feature, y=mean,group=1)) + geom_line() + geom_point()
-# }

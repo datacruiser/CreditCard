@@ -157,8 +157,13 @@ if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(packages, rownames(installed.packages())))  
 }
 
-library(corrplot)
+packages <- c("openxlsx")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))  
+}
 
+library(corrplot)
+library(openxlsx)
 library(tidyverse)
 library(car)
 library(VIM)
