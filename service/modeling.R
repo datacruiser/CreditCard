@@ -135,16 +135,6 @@ get_test_WOE <- function(df, coe, variableName){
 }
 
 
-for (i in score_class) {
-  s_interval = strsplit(i,";")
-  #print(parse_number(s_interval[[1]][1]))
-  low <- append(low, parse_number(s_interval[[1]][1]))
-  high <- append(high, parse_number(s_interval[[1]][2]))
-}
-score_info$low <- low
-score_info$high <- high
-score_info[1,"low"] <- -Inf
-score_info[dim(score_info)[1],"high"] <- Inf
 
 #获取测试样本中某个变量所所对应的评分
 get_feature_score <- function(x, feature){

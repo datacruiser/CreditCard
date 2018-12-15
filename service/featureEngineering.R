@@ -22,7 +22,7 @@ source(encodingPath)
 
 ####################################导入数据，并计算iv###############################
 #修改之前保存的数据的文件名
-df <- read_csv(paste(output_path, "application_data_1215_074541.csv", sep = "/"))
+df <- read_csv(paste(output_path, "application_data_1215_162109.csv", sep = "/"))
 
 step2_1 <- df
 

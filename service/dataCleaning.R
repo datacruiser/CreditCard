@@ -141,7 +141,7 @@ save.image()
 
 #########################################随机森林筛选变量#################################
 set.seed(4321)
-crf <- cforest(default~.,control = cforest_unbiased(mtry = 8, ntree = 20), data = step1_4)
+crf <- cforest(default~.,control = cforest_unbiased(mtry = 3, ntree = 5), data = step1_4)
 varimpt <- data.frame(varimp(crf))
 c <- as.data.frame(varimpt)
 save.image() #保存中间结果

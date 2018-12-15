@@ -1,0 +1,11 @@
+Variable,InformationValue,Bins,ZeroBins,Strength
+RevolvingUtilizationOfUnsecuredLines,0.9410047759860185,3,0,Very strong
+NumberOfTime30-59DaysPastDueNotWorse,0.6094696687334953,2,0,Very strong
+age,0.18463375855098305,3,0,Average
+MonthlyIncome,0.06342305874717888,2,0,Weak
+DebtRatio,0.0533190834351428,2,0,Weak
+NumberOfOpenCreditLinesAndLoans,0.052959246852125094,2,0,Weak
+NumberRealEstateLoansOrLines,0.041128441478989364,2,0,Weak
+NumberOfDependents,0.0321513327371848,2,0,Weak
+NumberOfTime60-89DaysPastDueNotWorse,0,1,0,Wery weak
+NumberOfTimes90DaysLate,0,1,0,Wery weak
