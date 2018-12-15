@@ -1,3 +1,5 @@
+###################运行环境配置###################
+
 #当前项目运行根路径
 projectPath <- getwd()
 package_manage <- paste(projectPath, "/util/packageManage.R",sep = "")
@@ -19,7 +21,8 @@ source(encodingPath)
 
 
 ####################################导入数据，并计算iv###############################
-df <- read_csv(paste(output_path, "application_data_1205_170726.csv", sep = "/"))
+#修改之前保存的数据的文件名
+df <- read_csv(paste(output_path, "application_data_1215_074541.csv", sep = "/"))
 
 step2_1 <- df
 
@@ -29,11 +32,7 @@ str(step2_1)
 
 step2_3 <- step2_1
 
-#remove the feature with Suspicious IV
 
-# step2_3 <- step2_3[, -which(colnames(step2_3) %in% c("due_days"))]
-
-#library(woe)
 #将step2_3处理为数据框 tibble 不能用来计算IV
 step2_3 <- as.data.frame(step2_3)
 row.names(step2_3) <- 1:nrow(step2_3)
@@ -54,6 +53,12 @@ ggsave(filename = filteredIVoutputpath, plot = filteredIVplot)
 ##根据IV值选取进入模型变量
 summary(step2_3)
 ###################################训练集和验证集划分##########################
+colnames(step2_3)
+
+#修改列名满足 WOE 变化函数要求
+colnames(df)[3] <- "NumberOfTime30_59DaysPastDueNotWorse"
+
+colnames(step2_3)[3] <- "NumberOfTime30_59DaysPastDueNotWorse"
 #进行变量WOE转换
 row.names(step2_3) = seq(1,nrow(step2_3))
 step2_3 <- iv.replace.woe(step2_3,iv=iv.mult(step2_3,"default"))
@@ -71,46 +76,14 @@ test <- step2_3[-d,]
 lg.full <- glm(default ~.,family = binomial(link='logit'), data = train[,c(1,(length(step2_1) +1):length(train))])
 summary(lg.full)
 
-
-# #逻辑回归仅保留显著变量
-# lg.reduced <- glm(default ~., family = binomial(link='logit'), data = train[,c(1,34:39,41,45:47,49:50,54,57,58,60:65)])
-# summary(lg.reduced)
-# 
-# #卡方检验
-# #anova(lg.full, lg.reduced, test = "Chisq")
-# 
-# #去除cook值4倍以上的异常值
-# 
-# # 通过 cook 距离来查看异常点
-# cooksd <- cooks.distance(lg.reduced)
-# # 画图
-# plot(cooksd, pch=".", cex=1, main="不同cook距离的影响")  # 绘制cook距离
-# abline(h = 4*mean(cooksd, na.rm=T), col="red")  # 添加截止分界线
-# text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>20*mean(cooksd, na.rm=T),names(cooksd),""), col="blue")  # 添加图签
-# ##
-# #去除cook4倍以上的异常值
-# influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))])
-# #上一条中得到的influential有NA值需要去除
-# influential <- influential[!is.na(influential)]
-# #去除训练数据中的异常值
-# train <- train[ -influential, ]
-# 
-# #去除异常值后建模
-# lg.reduceOutlier <- glm(default ~., family = binomial(link ='logit'), data = train[,c(1,34:39,41,45:47,49:50,54,57,58,60:65)])
-# #结果优于前面的结果
-# summary(lg.reduceOutlier)
-
-
+#在变量很多的时候逐步回归进一步筛选变量
 lg_both <- step(lg.full, direction = "both")
 lg_forward <- step(lg.full, direction = "forward")
 summary(lg_both)
 summary(lg_forward)
-# #library(car)
-# #
-# # #library(pROC)
-# #方差膨胀因子检验
-# ##经验判断方法表明：当0<VIF<10，不存在多重共线性；当10≤VIF<100，存在较强的多重共线性；当VIF≥100，存在严重多重共线性##
-#
+
+##经验判断方法表明：当0<VIF<10，不存在多重共线性；当10≤VIF<100，存在较强的多重共线性；当VIF≥100，存在严重多重共线性##
+
 vif_result <- vif(lg_both)
 vif.filename <- paste("vif_",format(Sys.time(), "%m%d_%H%M%S"), ".csv", sep = "")
 write.csv(vif(lg_both), paste(output_path, vif.filename,sep = "/"))
@@ -120,29 +93,9 @@ write.csv(vif(lg_both), paste(output_path, vif.filename,sep = "/"))
 vif_result <- as.data.frame(vif_result)
 vif_result_T <- t(vif_result)
 
-# 不进行逐步回归
-
 reducecols <- c("default", colnames(vif_result_T))
 reducecols
 
-# lg.reduce <- glm(default ~.,family = binomial(link='logit'), data = train[,reducecols])
-# summary(lg.reduce)
-# 
-# 
-# #再次向前向后
-# lg_both <- step(lg.reduce, direction = "both")
-# lg_forward <- step(lg.reduce, direction = "forward")
-# summary(lg_both)
-# summary(lg_forward)
-# #library(car)
-# 
-# #library(pROC)
-# #方差膨胀因子检验
-# ##经验判断方法表明：当0<VIF<10，不存在多重共线性；当10≤VIF<100，存在较强的多重共线性；当VIF≥100，存在严重多重共线性##
-# 
-# vif(lg_both)
-# vif.filename <- paste("vif2_",format(Sys.time(), "%m%d_%H%M%S"), ".csv", sep = "")
-# write.csv(vif(lg_both), paste(output_path, vif.filename, sep = "/"))
 
 #######################################输出变量分布图和woe分箱结果#########################################
 #去除"_WOE"获取原始变量名称
