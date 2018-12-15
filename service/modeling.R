@@ -1,16 +1,14 @@
 ####评分卡设定####
 #最终模型入选变量
 fitcols <- c("default",
-             "loan_7day_amount_woe",
-             "normal_overdue_woe",
-             #"score_woe",
-             "each_other_count_2m_rate_woe",
-             "dateDelta_first_apply_to_first_loan_woe",
-             "call_time_15srate_woe",
-             "inittime_woe",
-             "call_3time_15s_woe",
-             "relation_model_num_woe",
-             "deposit_base_woe"
+             "RevolvingUtilizationOfUnsecuredLines_woe",
+             "NumberOfTime30_59DaysPastDueNotWorse_woe",
+             "age_woe",
+             "MonthlyIncome_woe",
+             "NumberOfOpenCreditLinesAndLoans_woe",
+             "DebtRatio_woe",
+             "NumberRealEstateLoansOrLines_woe",
+             "NumberOfDependents_woe"
 )
 ###############################建模########################################
 #获取没有woe后缀的变量名
@@ -32,6 +30,7 @@ vif(fit)
 coe = fit$coefficients
 
 ##1.计算基础分
+#假设常数 A为500，坏好比例翻倍的分数PDO设定为30，倒推 point0
 A = 500
 B = 30/log(2)
 base_score = A-B*coe[1]
@@ -193,8 +192,8 @@ summary(test_fitcols$score)
 
 
 #############################基于训练集制作分数分布表##########################
-#分数分组,默认分14组，对于营销模型可以多分几组，特别是增加低分用户的粒度
-score_group <- 52
+#分数分组,默认分14组，为了增加低分用户的粒度可以多分几组
+score_group <- 14
 card_table <- data.frame()
 score_step <- (max(train_fitcols$score) -min(train_fitcols$score))/score_group
 score_min <- round(min(train_fitcols$score),0)
@@ -216,11 +215,6 @@ if(dim(card_table)[1]<17) {
 }
 
 
-
-# for (i in fitcols_variable[2:length(fitcols_variable)]){
-#   print(score_table[i])
-#   write_csv(as.data.frame(score_table[i]), paste(i, ".csv",sep = ""))
-# }
 
 #计算进入模型的变量IV，最大变量个数限制为15，不足15个的变量值用0补充
 ## the max feature number modified to 20
@@ -288,8 +282,6 @@ legend(450,0.017, legend=c("score", "test"), col=c("2", "1"), cex=0.75,lwd=2)
 model_psi <- round(c,5)
 
 
-
-
 #汇总模型性能指标
 model_performance<- c(train_ks, train_auc, test_ks, test_auc, model_psi, base_score)
 names(model_performance) <- c("Train_KS","Train_AUC", "Test_KS", "Test_AUC", "PSI","基础分")
@@ -297,21 +289,20 @@ names(model_performance) <- c("Train_KS","Train_AUC", "Test_KS", "Test_AUC", "PS
 
 #将评分卡结果直接写入xlsx
 library(openxlsx)
-# wb = loadWorkbook("score_card_template_test1.xlsx")
-# addWorksheet(wb,"feature_score")
-# addWorksheet(wb,"card_table")
+
 
 #读取评分卡模板
-wb = loadWorkbook("score_card_template_with16Features.xlsx")
+wb = loadWorkbook("score_card_template.xlsx")
 template_sheet = "score_card"
 
-for (woe in names(woe_table)){
+#写入各变量区间评分，也可以根据需要写入各区间的 WOE值
+for (score in names(score_table)){
   #print(score)
-  woe_index = which(names(woe_table) == WOE_value)
-  temp = woe_table[WOE_value][[1]][1:5]
-  title = c(WOE)
-  row_index = (as.integer((woe_index+1)/2)) *7 -6
-  col_index = (woe_index+1) %% 2 *8+1
+  score_index = which(names(score_table) == score)
+  temp = score_table[score][[1]][1:5]
+  title = c(score)
+  row_index = (as.integer((score_index+1)/2)) *7 -6
+  col_index = (score_index+1) %% 2 *8+1
   
   writeData(wb,template_sheet,temp,startRow=row_index + 0,startCol=col_index,colName=TRUE)
   writeData(wb,template_sheet,title,startRow=row_index,startCol=col_index,colName=FALSE)
@@ -319,17 +310,17 @@ for (woe in names(woe_table)){
   print(col_index)
 }
 
+#写入评分分层
 writeData(wb,template_sheet,card_table,startRow=2,startCol=18,colName=FALSE)
+#写入各变量信息
 writeData(wb,template_sheet,feature_IV,startRow=60,startCol=1,colName=TRUE)
 # 模型指标输出位置与变量统计还下移一行
-writeData(wb,template_sheet,names(model_performance),startRow=55,startCol=18,colName=TRUE)
-# Format the output of model performance
-writeData(wb,template_sheet,formatC(model_performance, digits = 4),startRow=55,startCol=19,colName=TRUE)
+writeData(wb,template_sheet,names(model_performance),startRow=17,startCol=18,colName=TRUE)
+# 写入各模型指标
+writeData(wb,template_sheet,formatC(model_performance, digits = 4),startRow=17,startCol=19,colName=TRUE)
 
 score_card_name <- str_c("score_card_group_", score_group , "_KS_" , train_ks, "+", format(Sys.time(), "%m%d_%H%M%S"), ".xlsx")
 
 saveWorkbook(wb,score_card_name,overwrite=TRUE)
 
 ##############################modling end##########################################
-
-导入相关包

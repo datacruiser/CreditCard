@@ -1,18 +1,14 @@
 ####评分卡设定####
 #最终模型入选变量
 fitcols <- c("default",
-             "loan_7day_amount_woe",
-             "normal_overdue_woe",
-             "score_woe",
-             "each_other_count_2m_rate_woe",
-             "dateDelta_first_apply_to_first_loan_woe",
-             "call_time_15srate_woe",
-             "inittime_woe",
-             "call_3time_15s_woe",
-             "relation_model_num_woe",
-             "deposit_base_woe"
-
-             
+             "RevolvingUtilizationOfUnsecuredLines_woe",
+             "NumberOfTime30_59DaysPastDueNotWorse_woe",
+             "age_woe",
+             "MonthlyIncome_woe",
+             "NumberOfOpenCreditLinesAndLoans_woe",
+             "DebtRatio_woe",
+             "NumberRealEstateLoansOrLines_woe",
+             "NumberOfDependents_woe"
             
              
 )
@@ -36,6 +32,7 @@ vif(fit)
 coe = fit$coefficients
 
 ##1.计算基础分
+
 A = 500
 B = 30/log(2)
 base_score = A-B*coe[1]

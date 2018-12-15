@@ -107,8 +107,9 @@ iv.csv <- paste(output_path, iv.filename, sep = "/")
 write_csv(IV, iv.csv)
 
 
-IVcols <- filter(IV, IV$InformationValue > 0.02 & IV$InformationValue < 2)[1]
-IVcols <- c("default", IVcols$Variable)
+#IVcols <- filter(IV, IV$InformationValue > 0.02 & IV$InformationValue < 2)[1]
+IVcols <- IV$Variable[1:8]
+IVcols <- c("default", IVcols)
 #将待训练样本降维
 step1_4 <- step1_3[,IVcols]
 dim(step1_4)
@@ -128,7 +129,7 @@ crf_varimpt.csv <- paste(output_path, crf.filename,sep = "/")
 write.csv(c, file = crf_varimpt.csv)
 
 #选择随机森林重要性0.00000以上的变量
-#设定随机森林重要性参数
+#设定随机森林重要性参数阈值
 CRF_BASE <- 0.0000
 
 #筛选随机森林后结果变量
@@ -142,40 +143,23 @@ for(i in 1:length(c[,1])){
 
 crfcols <- c("default",crfcols)
 
-#如果随机森林结果不含system则加入这三个变量
+#如果随机森林结果不含特定想加入的变量又在阈值设定的排除在外可在以下代码中加入
 
-additiveCols <- c("ov","phone_model")
-colBoolean <- additiveCols %in% crfcols
-
-for (i in 1:length(colBoolean)) {
-  if (!colBoolean[i]) {
-    print(colBoolean[i])
-    crfcols <- c(crfcols, additiveCols[i])
-  }
-}
+# additiveCols <- c("test","test2")
+# colBoolean <- additiveCols %in% crfcols
+# 
+# for (i in 1:length(colBoolean)) {
+#   if (!colBoolean[i]) {
+#     print(colBoolean[i])
+#     crfcols <- c(crfcols, additiveCols[i])
+#   }
+# }
 
 step1_5 <- step1_3[, crfcols]
 
 colnames(step1_5)
 
-# 删除完全缺失以及已经衍生过的特征
-step1_5 <- step1_5[, -which(colnames(step1_5) %in% c("gjj_sid",
-                                                     "user_sid",
-                                                     "apply_sid"))]
-colnames(step1_5)
-
-# step1_5 <- step1_5[,-c(2)] # 将逾期天数变量去除
-
-# #去除borrow_risk_days为负的样本
-# step1_6 <- step1_5[step1_5$borrow_risk_days>=0,]
-# s
-# # #去除与borrow_risk_days变量相关的变量
-# # step3_1 <- step3_1[,-which(colnames(step3_1) %in% c("borrow_risk_days","average_borrow_internal_days","borrow_latest_1month_count","borrow_latest_2month_count"))]
-# # 
-# # #去除重复变量，后续在SQL语句中更新
-# # step3_1 <- step3_1[,-which(colnames(step3_1) %in% c("renewal_count.1"))]
-# 
-# #保存清洗后数据
+# 保存最终清洗后数据
 application_data.filename <- paste("application_data_",format(Sys.time(), "%m%d_%H%M%S"), ".csv", sep = "")
 application_data.csv <- paste(output_path, application_data.filename,sep = "/")
 write_csv(step1_5, application_data.csv)
