@@ -210,8 +210,9 @@ for(i in 1:score_group){
   card_table[i, "total"] <- length(score_section)
 }
 write_csv(card_table, "card_table.csv")
-if(dim(card_table)[1]<17) {
-  card_table[(dim(card_table)[1] +1):17,] <- 0
+#将多余的评分卡表补充为0
+if(dim(card_table)[1]<14) {
+  card_table[(dim(card_table)[1] +1):14,] <- 0
 }
 
 
@@ -227,7 +228,7 @@ if(dim(feature_IV)[1]<20) {
 for(i in fitcols_variable[2:length(fitcols_variable)]){
   print(i)
   temp <- score_table[i][[1]]
-  feature_IV[feature_IV$Variable ==i, "awarded_rate"] <- sum(temp[temp$score>0,"total"]) / dim(train)[1]
+  feature_IV[feature_IV$Variable ==i, "awarded_rate"] <- sum(temp[temp$score>0,"total"]) / dim(step2_3)[1]
 }
 
 ##########################################测试集模型指标绘制#############################
@@ -235,7 +236,6 @@ for(i in fitcols_variable[2:length(fitcols_variable)]){
 hist(test_fitcols$score,col = "green",freq = F)
 lines(density(test_fitcols$score),col="blue",lwd=3)
 abline(v=median(test_fitcols$score),col="magenta",lwd=3)
-#write.csv(test,"test_score1203.csv")
 
 library(pROC)
 roc(test_fitcols$default, 1000-test_fitcols$score, plot = TRUE, auc = TRUE)
@@ -279,6 +279,7 @@ PSIlable
 legend(500,0.013,c(PSIlable),bty="n",ncol = 1)
 legend(450,0.017, legend=c("score", "test"), col=c("2", "1"), cex=0.75,lwd=2)
 
+#一般认为psi小于0.1时候模型稳定性很高，0.1-0.25一般，大于0.25模型稳定性差，建议重做。
 model_psi <- round(c,5)
 
 
@@ -292,9 +293,11 @@ library(openxlsx)
 
 
 #读取评分卡模板
+#评分卡模板必须得由 excel 保存，wps 保存过的文件后面会无法保存
 wb = loadWorkbook("score_card_template.xlsx")
 template_sheet = "score_card"
 
+#saveWorkbook(wb,"test.xlsx")
 #写入各变量区间评分，也可以根据需要写入各区间的 WOE值
 for (score in names(score_table)){
   #print(score)
