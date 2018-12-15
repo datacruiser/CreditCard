@@ -21,7 +21,7 @@ library(corrplot)
 cor1<-cor(train[,fitcols_variable])
 corrplot(cor1,method = "number")
 
-fit <- glm(default~.,family=binomial(link='logit'),data=step2_3[,fitcols])
+fit <- glm(default~.,family=binomial(link='logit'),data=train[,fitcols])
 
 summary(fit)
 vif(fit)
@@ -35,14 +35,14 @@ A = 500
 B = 30/log(2)
 base_score = A-B*coe[1]
 
-train_fitcols <- step2_3[fitcols]
+train_fitcols <- train[fitcols]
 
 for(i in fitcols[2:length(fitcols)]){
   train_fitcols[paste(i, "_score", sep = "")] <- (-1)*B*train_fitcols[i]*coe[i]
 }
 train_fitcols$score <- apply(train_fitcols[,(length(fitcols) + 1):length(train_fitcols)], MARGIN = 1, function(x) sum(x))
 train_fitcols$score <- train_fitcols$score + base_score
-train_fitcols$default <- step2_3$default
+train_fitcols$default <- train$default
 
 train_score_data.filename <- paste("train_score_result",format(Sys.time(), "%m%d_%H%M%S"), ".csv", sep = "")
 train_score.csv <- paste(output_path, train_score_data.filename,sep = "/")
@@ -80,7 +80,8 @@ train_ks <- round(max(ks),3)
 
 # 获取变量的评分区间
 get_test_score <- function(df, coe, variableName){
-  #df <- step2_3
+  #df <- train
+  row.names(df) = seq(1,nrow(df))
   iv_info <- as.data.frame(iv.mult(df,"default",vars=c(variableName)))
   score_class <- as.character(iv_info$class)
   score <- iv_info$woe*(-1)*B*coe[paste(variableName, "_woe",sep = "")]
@@ -108,7 +109,8 @@ get_test_score <- function(df, coe, variableName){
 
 # 获取变量的 WOE 区间
 get_test_WOE <- function(df, coe, variableName){
-  #df <- step2_3
+  #df <- train
+  row.names(df) = seq(1,nrow(df))
   iv_info <- as.data.frame(iv.mult(df,"default",vars=c(variableName)))
   WOE_class <- as.character(iv_info$class)
   WOE_value <- iv_info$woe
@@ -135,16 +137,6 @@ get_test_WOE <- function(df, coe, variableName){
 }
 
 
-for (i in score_class) {
-  s_interval = strsplit(i,";")
-  #print(parse_number(s_interval[[1]][1]))
-  low <- append(low, parse_number(s_interval[[1]][1]))
-  high <- append(high, parse_number(s_interval[[1]][2]))
-}
-score_info$low <- low
-score_info$high <- high
-score_info[1,"low"] <- -Inf
-score_info[dim(score_info)[1],"high"] <- Inf
 
 #获取测试样本中某个变量所所对应的评分
 get_feature_score <- function(x, feature){
@@ -163,7 +155,7 @@ get_feature_score <- function(x, feature){
 #将所有变量的评分表合一
 score_table <- list()
 for(v in fitcols_variable[2:length(fitcols_variable)]){
-  s_table <- get_test_score(step2_3, coe, v)
+  s_table <- get_test_score(train, coe, v)
   print(s_table)
   score_table[v] <- list(s_table)
 }
@@ -172,7 +164,7 @@ for(v in fitcols_variable[2:length(fitcols_variable)]){
 #将所有变量的WOE表合一
 woe_table <- list()
 for(v in fitcols_variable[2:length(fitcols_variable)]){
-  w_table <- get_test_WOE(step2_3, coe, v)
+  w_table <- get_test_WOE(train, coe, v)
   print(w_table)
   woe_table[v] <- list(w_table)
 }
@@ -216,10 +208,16 @@ if(dim(card_table)[1]<14) {
 }
 
 
-
 #计算进入模型的变量IV，最大变量个数限制为15，不足15个的变量值用0补充
 ## the max feature number modified to 20
-feature_IV<-iv.mult(step2_3[fitcols_variable],"default",TRUE)
+row.names(train) = seq(1,nrow(train))
+
+feature_IV<-iv.mult(train[fitcols_variable],"default",TRUE)
+if(dim(feature_IV)[1]<20) {
+  feature_IV[(dim(feature_IV)[1] +1):20,] <- 0
+}
+#计算进入模型的变量IV，最大变量个数限制为15，不足15个的变量值用0补充
+## the max feature number modified to 20
 if(dim(feature_IV)[1]<20) {
   feature_IV[(dim(feature_IV)[1] +1):20,] <- 0
 }
@@ -228,7 +226,7 @@ if(dim(feature_IV)[1]<20) {
 for(i in fitcols_variable[2:length(fitcols_variable)]){
   print(i)
   temp <- score_table[i][[1]]
-  feature_IV[feature_IV$Variable ==i, "awarded_rate"] <- sum(temp[temp$score>0,"total"]) / dim(step2_3)[1]
+  feature_IV[feature_IV$Variable ==i, "awarded_rate"] <- sum(temp[temp$score>0,"total"]) / dim(train)[1]
 }
 
 ##########################################测试集模型指标绘制#############################
