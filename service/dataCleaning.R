@@ -62,7 +62,27 @@ table(sample$default)
 # ###################################特征衍生######################################
 
 
+# ###################################异常值处理######################################
 
+boxplot(sample$age)
+unique(sample$age)
+#删除年龄为0的异常值
+sample <- sample[-which(sample$age == 0),]
+
+boxplot(sample$DebtRatio)
+unique(sample$DebtRatio)
+#删除DebtRatio大于1的异常值
+sample=sample[-which(sample$DebtRatio>1),]
+
+#删除逾期次数异常的数据
+boxplot(sample$`NumberOfTime30-59DaysPastDueNotWorse`,sample$`NumberOfTime60-89DaysPastDueNotWorse`,sample$NumberOfTimes90DaysLate, names = c('x3','x7','x9'))
+unique(sample$`NumberOfTime60-89DaysPastDueNotWorse`)
+unique(sample$`NumberOfTime30-59DaysPastDueNotWorse`)
+unique(sample$NumberOfTimes90DaysLate)
+sample=sample[-which(sample$`NumberOfTime60-89DaysPastDueNotWorse`>95|sample$`NumberOfTime60-89DaysPastDueNotWorse`>95|sample$NumberOfTimes90DaysLate>95),]
+
+dim(sample)
+table(sample$default)
 
 ####################################缺失值删除并插补#####################################
 step1_1 <- sample
